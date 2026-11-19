@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+tests/
+.pytest_cache/
+.coverage
+coverage.xml
+requirements-dev.txt
+sonar-project.properties
