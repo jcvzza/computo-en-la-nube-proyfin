@@ -25,7 +25,7 @@ pipeline {
                         python3 -m venv .venv
                         . .venv/bin/activate
                         pip install -q -r requirements-dev.txt
-                        pytest --cov=app --cov-report=xml:coverage.xml -q
+                        python -m pytest --cov=app --cov-report=xml:coverage.xml -q
                     '''
                 }
             }
