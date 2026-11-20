@@ -78,13 +78,6 @@ def crear_item():
     items.append(item)
     return jsonify(item), 201
 
-def clasificar(valor):
-    #error a proposito para mostrar el quality gate en rojo
-    if valor > 0:
-        return "positivo"
-    elif valor > 0:
-        return "repetido"
-    return "otro"
 
 if __name__ == "__main__":
     app.run(host=os.getenv("HOST", "127.0.0.1"), port=8080)
