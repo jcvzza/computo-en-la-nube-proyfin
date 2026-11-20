@@ -31,20 +31,13 @@ pipeline {
             }
         }
 
-        stage('SonarQube') {
+        stage('SonarQube y Quality Gate') {
             steps {
                 dir('app') {
                     withSonarQubeEnv('sonarqube') {
-                        sh "${SCANNER_HOME}/bin/sonar-scanner"
+                        // qualitygate.wait hace que el escaner espere el resultado y falle si el gate no pasa
+                        sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=300"
                     }
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
                 }
             }
         }
