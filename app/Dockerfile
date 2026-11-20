@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.12-slim
 ARG GIT_SHA=dev
 ARG BUILD_DATE=desconocida
-ENV GIT_SHA=$GIT_SHA BUILD_DATE=$BUILD_DATE
+ENV GIT_SHA=$GIT_SHA BUILD_DATE=$BUILD_DATE HOST=0.0.0.0
 
 #creamos un usuario sin privilegios para no correr como root
 RUN useradd --uid 10001 --no-create-home appuser
