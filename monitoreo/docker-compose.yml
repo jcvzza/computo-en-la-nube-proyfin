@@ -1,0 +1,55 @@
+#monitoreo en vm-tools: prometheus, alertmanager y grafana en contenedores con versiones fijas
+#node_exporter se instala directo en cada vm (ver scripts/), no aqui
+#VM_K8S_IP y VM_TOOLS_IP salen del archivo .env (ver .env.example)
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.2
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      #retencion maxima de 15 dias para no llenar el disco ni gastar de mas
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "vm-k8s:${VM_K8S_IP:?falta VM_K8S_IP en .env}"
+      - "vm-tools:${VM_TOOLS_IP:?falta VM_TOOLS_IP en .env}"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/reglas.yml:/etc/prometheus/reglas.yml:ro
+      - ./secrets:/etc/prometheus/secrets:ro
+      - prometheus-datos:/prometheus
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./secrets:/etc/alertmanager/secrets:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      #la contrasena vive en .env, que no se sube al repo
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?falta GRAFANA_ADMIN_PASSWORD en .env}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/tableros/aplicacion.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/tableros:/var/lib/grafana/tableros:ro
+      - grafana-datos:/var/lib/grafana
+
+volumes:
+  prometheus-datos:
+  grafana-datos:

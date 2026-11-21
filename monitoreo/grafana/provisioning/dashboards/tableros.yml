@@ -1,0 +1,10 @@
+#grafana carga los tableros desde los json del repo
+apiVersion: 1
+providers:
+  - name: medisur
+    folder: MediSur
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/tableros

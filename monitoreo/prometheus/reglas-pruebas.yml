@@ -1,0 +1,81 @@
+#pruebas de las alertas con promtool: simulamos datos y revisamos que cada alerta dispare (o no) cuando debe
+#correr con: docker run --rm -v "$PWD/monitoreo/prometheus:/p" --entrypoint promtool prom/prometheus:v2.53.2 test rules /p/reglas-pruebas.yml
+rule_files:
+  - reglas.yml
+evaluation_interval: 1m
+
+tests:
+  #disco: vm-k8s pasa a 85 % usado y vm-tools se queda en 50 %
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_size_bytes{mountpoint="/",vm="vm-k8s"}'
+        values: "100x10"
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",vm="vm-k8s"}'
+        values: "15x10"
+      - series: 'node_filesystem_size_bytes{mountpoint="/",vm="vm-tools"}'
+        values: "100x10"
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",vm="vm-tools"}'
+        values: "50x10"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: DiscoCasiLleno
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: DiscoCasiLleno
+        exp_alerts:
+          - exp_labels: {severity: warning, mountpoint: "/", vm: vm-k8s}
+            exp_annotations:
+              summary: "Disco al 85 % en vm-k8s"
+              description: "El disco raiz de vm-k8s paso del 80 %. Liberar espacio (imagenes viejas de docker, logs)."
+
+  #reinicios: un pod se reinicia 5 veces en 10 minutos, el otro solo 1
+  - interval: 1m
+    input_series:
+      - series: 'kube_pod_container_status_restarts_total{namespace="medisur",pod="medisur-app-a"}'
+        values: "0 1 2 3 4 5 5 5 5 5 5"
+      - series: 'kube_pod_container_status_restarts_total{namespace="medisur",pod="medisur-app-b"}'
+        values: "0 0 0 0 0 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: PodReiniciandoMucho
+        exp_alerts:
+          - exp_labels: {severity: critical, namespace: medisur, pod: medisur-app-a}
+            exp_annotations:
+              summary: "El pod medisur-app-a se reinicio 5 veces en 10 min"
+              description: "Revisar logs con kubectl -n medisur logs medisur-app-a --previous"
+
+  #replicas: deseadas 2, listas 1 durante 7 minutos; a los 4 min aun no alerta, a los 6 si
+  - interval: 1m
+    input_series:
+      - series: 'kube_deployment_spec_replicas{namespace="medisur",deployment="medisur-app"}'
+        values: "2x10"
+      - series: 'kube_deployment_status_replicas_ready{namespace="medisur",deployment="medisur-app"}'
+        values: "2 1 1 1 1 1 1 1 2 2 2"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ReplicasIncompletas
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: ReplicasIncompletas
+        exp_alerts:
+          - exp_labels: {severity: critical, namespace: medisur, deployment: medisur-app}
+            exp_annotations:
+              summary: "medisur-app tiene menos replicas listas que las deseadas"
+              description: "Listas: 1. Revisar kubectl -n medisur get pods."
+      - eval_time: 10m
+        alertname: ReplicasIncompletas
+        exp_alerts: []
+
+  #objetivo caido: vm-k8s deja de responder
+  - interval: 1m
+    input_series:
+      - series: 'up{job="nodos",instance="vm-k8s:9100"}'
+        values: "1 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ObjetivoSinResponder
+        exp_alerts:
+          - exp_labels: {severity: critical, job: nodos, instance: "vm-k8s:9100"}
+            exp_annotations:
+              summary: "nodos (vm-k8s:9100) no responde"
+              description: "Prometheus no pudo leer este objetivo en los ultimos 2 minutos."

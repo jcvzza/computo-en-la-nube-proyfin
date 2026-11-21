@@ -1,0 +1,14 @@
+#alertmanager agrupa las alertas y las manda a discord
+#la url del webhook vive en un archivo fuera del repo (secrets/discord-webhook)
+route:
+  receiver: discord
+  group_by: [alertname, vm, pod]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url_file: /etc/alertmanager/secrets/discord-webhook
+        send_resolved: true

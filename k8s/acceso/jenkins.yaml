@@ -1,0 +1,76 @@
+#cuenta que usa jenkins para desplegar; solo puede tocar lo necesario dentro del namespace medisur
+#se aplica una vez al preparar el cluster (scripts/preparar-vm-k8s.sh), no en cada despliegue
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: medisur
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-despliegue
+  namespace: medisur
+rules:
+  #aplicar y actualizar la app
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  #rollout status, history y undo necesitan leer los replicasets
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-despliegue
+  namespace: medisur
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-despliegue
+subjects:
+  - kind: ServiceAccount
+    name: jenkins
+    namespace: medisur
+---
+#el pipeline aplica namespace.yaml; le dejamos leer y actualizar solo ese namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jenkins-namespace-medisur
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: ["medisur"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-namespace-medisur
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jenkins-namespace-medisur
+subjects:
+  - kind: ServiceAccount
+    name: jenkins
+    namespace: medisur
+---
+#token de larga duracion para armar el kubeconfig de jenkins
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-token
+  namespace: medisur
+  annotations:
+    kubernetes.io/service-account.name: jenkins
+type: kubernetes.io/service-account-token

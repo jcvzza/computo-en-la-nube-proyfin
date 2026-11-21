@@ -1,0 +1,2 @@
+#las alertas se manejan con prometheus + alertmanager (monitoreo/prometheus/reglas.yml), no con grafana
+apiVersion: 1

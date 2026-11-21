@@ -1,0 +1,7 @@
+#secretos y archivos generados que nunca deben subirse
+.env
+monitoreo/secrets/
+laboratorio-local/.salida/
+*.kubeconfig
+kubeconfig*
+deployment.render.yaml

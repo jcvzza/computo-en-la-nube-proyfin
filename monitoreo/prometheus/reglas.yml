@@ -1,0 +1,42 @@
+#las 3 alertas que pide el proyecto, mas una de respaldo por si un objetivo deja de responder
+groups:
+  - name: medisur
+    rules:
+      - alert: DiscoCasiLleno
+        #porcentaje usado del disco raiz de cada vm
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco al {{ $value | printf \"%.0f\" }} % en {{ $labels.vm }}"
+          description: "El disco raiz de {{ $labels.vm }} paso del 80 %. Liberar espacio (imagenes viejas de docker, logs)."
+
+      - alert: PodReiniciandoMucho
+        #mas de 3 reinicios en los ultimos 10 minutos
+        expr: increase(kube_pod_container_status_restarts_total{namespace="medisur"}[10m]) > 3
+        labels:
+          severity: critical
+        annotations:
+          summary: "El pod {{ $labels.pod }} se reinicio {{ $value | printf \"%.0f\" }} veces en 10 min"
+          description: "Revisar logs con kubectl -n medisur logs {{ $labels.pod }} --previous"
+
+      - alert: ReplicasIncompletas
+        #menos replicas listas que las deseadas durante mas de 5 minutos
+        expr: kube_deployment_status_replicas_ready{namespace="medisur"} < kube_deployment_spec_replicas{namespace="medisur"}
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.deployment }} tiene menos replicas listas que las deseadas"
+          description: "Listas: {{ $value }}. Revisar kubectl -n medisur get pods."
+
+      - alert: ObjetivoSinResponder
+        #si prometheus no puede leer una vm o el cluster, nos enteramos
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} ({{ $labels.instance }}) no responde"
+          description: "Prometheus no pudo leer este objetivo en los ultimos 2 minutos."

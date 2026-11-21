@@ -1,0 +1,10 @@
+#grafana se conecta solo a prometheus al arrancar, sin configurar nada a clics
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

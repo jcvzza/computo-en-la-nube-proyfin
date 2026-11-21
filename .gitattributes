@@ -1,0 +1,5 @@
+#los scripts y manifiestos siempre con saltos de linea de linux, aunque se editen en windows
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Jenkinsfile text eol=lf

@@ -1,4 +1,6 @@
-from app import app
+import pytest
+
+from app import app, apagar
 
 #creamos un cliente de prueba para simular las peticiones sin levantar el servidor
 cliente = app.test_client()
@@ -24,6 +26,7 @@ def test_version():
     assert "version" in datos
     assert "sha" in datos
     assert "build_date" in datos
+    assert "entorno" in datos
 
 
 def test_metrics():
@@ -31,7 +34,10 @@ def test_metrics():
     cliente.get("/health")
     r = cliente.get("/metrics")
     assert r.status_code == 200
-    assert "http_requests_total" in r.get_data(as_text=True)
+    texto = r.get_data(as_text=True)
+    assert "http_requests_total" in texto
+    #verificamos que tambien salga la version desplegada
+    assert "medisur_app_info" in texto
 
 
 def test_crear_item():
@@ -53,3 +59,9 @@ def test_crear_item_sin_nombre():
     #si no mandamos el nombre debe regresar error 400
     r = cliente.post("/api/items", json={})
     assert r.status_code == 400
+
+
+def test_apagar():
+    #verificamos que al recibir la senal de apagado la app termine limpio
+    with pytest.raises(SystemExit):
+        apagar(15, None)
