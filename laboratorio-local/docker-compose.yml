@@ -1,0 +1,45 @@
+#laboratorio para probar todo en una compu con docker desktop antes de tocar las vms
+#simula vm-k8s con k3s en un contenedor y le pone node_exporter a cada "vm"
+#se usa junto con el compose de monitoreo:
+#  docker compose -p medisur-lab -f ../monitoreo/docker-compose.yml -f docker-compose.yml --env-file lab.env up -d
+services:
+  vm-k8s:
+    image: rancher/k3s:v1.30.4-k3s1
+    container_name: lab-vm-k8s
+    hostname: vm-k8s
+    privileged: true
+    command: server --disable traefik --disable metrics-server --tls-san vm-k8s --write-kubeconfig-mode 644
+    environment:
+      K3S_KUBECONFIG_OUTPUT: /salida/kubeconfig.yaml
+    tmpfs:
+      - /run
+      - /var/run
+    ports:
+      - "26443:6443"
+      - "30080:30080"
+    volumes:
+      - ../laboratorio-local/.salida:/salida
+    networks:
+      default:
+        ipv4_address: 172.30.0.10
+
+  #node_exporter dentro de la "vm-k8s" (comparte su red)
+  node-exporter-vmk8s:
+    image: prom/node-exporter:v1.8.2
+    container_name: lab-node-vmk8s
+    network_mode: service:vm-k8s
+    depends_on: [vm-k8s]
+
+  #node_exporter que hace de "vm-tools"
+  node-exporter-vmtools:
+    image: prom/node-exporter:v1.8.2
+    container_name: lab-node-vmtools
+    networks:
+      default:
+        ipv4_address: 172.30.0.11
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

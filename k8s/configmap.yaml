@@ -1,0 +1,9 @@
+#configuracion que no es secreta, la app la lee como variables de entorno
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: medisur-config
+  namespace: medisur
+data:
+  ENTORNO: "produccion"
+  HOST: "0.0.0.0"

@@ -1,0 +1,49 @@
+#prometheus vive fuera del cluster (en vm-tools), asi que le damos una cuenta de solo lectura
+#para que lea las metricas de los pods, de kube-state-metrics y de cadvisor a traves de la api de k3s
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoreo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoreo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-externo
+rules:
+  #para descubrir los pods y nodos
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  #para leer /metrics pasando por la api (pods, servicios y cadvisor de los nodos)
+  - apiGroups: [""]
+    resources: ["pods/proxy", "services/proxy", "nodes/proxy", "nodes/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-externo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-externo
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoreo
+---
+#token de larga duracion para la cuenta; se copia a vm-tools y nunca se sube al repo
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-token
+  namespace: monitoreo
+  annotations:
+    kubernetes.io/service-account.name: prometheus
+type: kubernetes.io/service-account-token
