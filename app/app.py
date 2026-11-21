@@ -6,7 +6,8 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 
 app = Flask(__name__)
 
-#leemos la version y la fecha desde variables de entorno, el pipeline las agrega al construir la imagen
+#leemos la version, el sha y la fecha desde variables de entorno, el pipeline las agrega al construir la imagen
+APP_VERSION = os.getenv("APP_VERSION", "0.0.0")
 GIT_SHA = os.getenv("GIT_SHA", "dev")
 BUILD_DATE = os.getenv("BUILD_DATE", "desconocida")
 
@@ -50,7 +51,7 @@ def ready():
 @app.route("/version")
 def version():
     #mostramos que version esta corriendo para comprobar que se actualizo
-    return jsonify(sha=GIT_SHA, build_date=BUILD_DATE)
+    return jsonify(version=APP_VERSION, sha=GIT_SHA, build_date=BUILD_DATE)
 
 
 @app.route("/metrics")

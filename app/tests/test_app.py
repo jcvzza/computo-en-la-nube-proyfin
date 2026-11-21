@@ -18,9 +18,10 @@ def test_ready():
 
 
 def test_version():
-    #verificamos que la respuesta traiga el sha y la fecha
+    #verificamos que la respuesta traiga la version, el sha y la fecha
     r = cliente.get("/version")
     datos = r.get_json()
+    assert "version" in datos
     assert "sha" in datos
     assert "build_date" in datos
 
