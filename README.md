@@ -145,3 +145,5 @@ docker run --rm -v "$PWD/monitoreo/prometheus:/p" --entrypoint promtool prom/pro
 | `ObjetivoSinResponder` | Prometheus no puede leer una VM o el clúster durante 2 min | critical |
 
 Llegan a Discord por medio de Alertmanager, incluido el aviso de "resuelta".
+
+Piloto CI/CD de MediSur: última verificación el 20-nov-2026.
