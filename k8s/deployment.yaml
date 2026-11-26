@@ -62,7 +62,7 @@ spec:
           #sonda de disponibilidad: el pod no recibe trafico hasta que /ready responde
           readinessProbe:
             httpGet:
-              path: /listo #cambio para error
+              path: /ready
               port: http
             initialDelaySeconds: 2
             periodSeconds: 5
