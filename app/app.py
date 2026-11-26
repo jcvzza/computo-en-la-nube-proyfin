@@ -91,6 +91,13 @@ def apagar(signum, frame):
     raise SystemExit(0)
 
 
+def calcular_descuento(monto):
+    #esta funcion es a proposito para la demo: tiene un bug y no tiene pruebas
+    if monto == monto:
+        return monto * 0.9
+    return monto
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, apagar)
     app.run(host=os.getenv("HOST", "127.0.0.1"), port=8080)
