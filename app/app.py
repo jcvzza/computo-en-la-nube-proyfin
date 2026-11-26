@@ -57,7 +57,7 @@ def ready():
 @app.route("/version")
 def version():
     #mostramos que version esta corriendo para comprobar que se actualizo
-    return jsonify(version=APP_VERSION, sha=GIT_SHA, build_date=BUILD_DATE, entorno=ENTORNO)
+    return jsonify(version=APP_VERSION, sha=GIT_SHA, build_date=BUILD_DATE, entorno=ENTORNO, mensaje="demo del pipeline")
 
 
 @app.route("/metrics")
